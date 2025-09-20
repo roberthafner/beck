@@ -1,0 +1,48 @@
+{{.Comment}}func {{.TestName}}(t *testing.T) {
+	{{if .HasMocks}}// Setup mocks
+	{{range .MockStructs}}{{.Name}} := &Mock{{.InterfaceName}}{}
+	{{end}}{{end}}
+
+	{{if .TableDriven}}tests := []struct {
+		name string
+		{{range .Function.Parameters}}{{.Name}} {{.Type}}
+		{{end}}{{if .Function.ReturnTypes}}want {{index .Function.ReturnTypes 0}}{{end}}
+		{{if .Function.HasErrorReturn}}wantErr bool{{end}}
+	}{
+		{{range .TestCases}}{
+			name: "{{.Name}}",
+			{{range .Inputs}}{{.Name}}: {{.Value}},
+			{{end}}{{range .ExpectedOutput}}want: {{.Value}},
+			{{end}}{{if .ExpectError}}wantErr: true,{{end}}
+		},
+		{{end}}
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			{{if .Function.IsMethod}}receiver := &{{.Function.ReceiverType}}{}
+			{{if .Function.ReturnTypes}}got{{if .Function.HasErrorReturn}}, err{{end}} := receiver.{{.Function.Name}}({{range $i, $param := .Function.Parameters}}{{if $i}}, {{end}}tt.{{$param.Name}}{{end}}){{else}}receiver.{{.Function.Name}}({{range $i, $param := .Function.Parameters}}{{if $i}}, {{end}}tt.{{$param.Name}}{{end}}){{end}}{{else}}{{if .Function.ReturnTypes}}got{{if .Function.HasErrorReturn}}, err{{end}} := {{.Function.Name}}({{range $i, $param := .Function.Parameters}}{{if $i}}, {{end}}tt.{{$param.Name}}{{end}}){{else}}{{.Function.Name}}({{range $i, $param := .Function.Parameters}}{{if $i}}, {{end}}tt.{{$param.Name}}{{end}}){{end}}{{end}}
+
+			{{if .Function.HasErrorReturn}}if tt.wantErr {
+				assert.Error(t, err, "Expected error for test case: %s", tt.name)
+			} else {
+				assert.NoError(t, err, "Unexpected error for test case: %s", tt.name)
+			}{{end}}
+			{{if and .Function.ReturnTypes (not .ExpectError)}}assert.Equal(t, tt.want, got, "Unexpected result for test case: %s", tt.name){{end}}
+		})
+	}{{else}}{{range $i, $case := .TestCases}}
+	t.Run("{{$case.Name}}", func(t *testing.T) {
+		// Arrange
+		{{range .Inputs}}{{.Name}} := {{.Value}}
+		{{end}}
+
+		// Act
+		{{if $.Function.IsMethod}}receiver := &{{$.Function.ReceiverType}}{}
+		{{if $.Function.ReturnTypes}}result{{if $.Function.HasErrorReturn}}, err{{end}} := receiver.{{$.Function.Name}}({{range $j, $input := .Inputs}}{{if $j}}, {{end}}{{$input.Name}}{{end}}){{else}}receiver.{{$.Function.Name}}({{range $j, $input := .Inputs}}{{if $j}}, {{end}}{{$input.Name}}{{end}}){{end}}{{else}}{{if $.Function.ReturnTypes}}result{{if $.Function.HasErrorReturn}}, err{{end}} := {{$.Function.Name}}({{range $j, $input := .Inputs}}{{if $j}}, {{end}}{{$input.Name}}{{end}}){{else}}{{$.Function.Name}}({{range $j, $input := .Inputs}}{{if $j}}, {{end}}{{$input.Name}}{{end}}){{end}}{{end}}
+
+		// Assert
+		{{if $case.ExpectError}}assert.Error(t, err, "Expected error for {{$case.Name}}"){{else}}{{if $.Function.HasErrorReturn}}assert.NoError(t, err, "Unexpected error for {{$case.Name}}"){{end}}{{end}}
+		{{if and $.Function.ReturnTypes (not $case.ExpectError)}}{{range .ExpectedOutput}}assert.Equal(t, {{.Value}}, result, "Unexpected result for {{$case.Name}}"){{end}}{{end}}
+	})
+	{{end}}{{end}}
+}

@@ -1,0 +1,15 @@
+func Benchmark{{.Function.Name}}(b *testing.B) {
+	{{if .HasMocks}}// Setup mocks
+	{{range .MockStructs}}{{.Name}} := &Mock{{.InterfaceName}}{}
+	{{end}}{{end}}
+
+	// Setup test data
+	{{range .Function.Parameters}}{{.Name}} := {{generateBenchmarkValue .Type}}
+	{{end}}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		{{if .Function.IsMethod}}receiver := &{{.Function.ReceiverType}}{}
+		{{if .Function.ReturnTypes}}_ {{if .Function.HasErrorReturn}}, _{{end}} = receiver.{{.Function.Name}}({{range $i, $param := .Function.Parameters}}{{if $i}}, {{end}}{{$param.Name}}{{end}}){{else}}receiver.{{.Function.Name}}({{range $i, $param := .Function.Parameters}}{{if $i}}, {{end}}{{$param.Name}}{{end}}){{end}}{{else}}{{if .Function.ReturnTypes}}_ {{if .Function.HasErrorReturn}}, _{{end}} = {{.Function.Name}}({{range $i, $param := .Function.Parameters}}{{if $i}}, {{end}}{{$param.Name}}{{end}}){{else}}{{.Function.Name}}({{range $i, $param := .Function.Parameters}}{{if $i}}, {{end}}{{$param.Name}}{{end}}){{end}}{{end}}
+	}
+}

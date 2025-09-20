@@ -1,0 +1,30 @@
+{{.Comment}}func {{.TestName}}(t *testing.T) {
+	{{range $i, $case := .TestCases}}{{if $i}}
+	{{end}}t.Run("{{$case.Name}}", func(t *testing.T) {
+		// Test case: {{$case.Description}}
+		{{range $input := $case.Inputs}}{{$input.Name}} := {{$input.Value}}
+		{{end}}
+
+		{{if $.Function.IsMethod}}// Create receiver instance
+		receiver := {{$.Function.ReceiverType}}{}
+		{{end}}
+
+		// Call function under test
+		{{if $.Function.ReturnTypes}}{{if $.Function.HasErrorReturn}}result, err := {{else}}result := {{end}}{{else}}{{end}}{{if $.Function.IsMethod}}receiver.{{$.Function.Name}}({{else}}{{$.Function.Name}}({{end}}{{range $j, $input := $case.Inputs}}{{if $j}}, {{end}}{{$input.Name}}{{end}})
+
+		{{if $case.ExpectError}}// Expect error
+		if err == nil {
+			t.Errorf("Expected error but got none")
+		}{{else}}{{if $.Function.HasErrorReturn}}// Check for unexpected error
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}{{end}}
+
+		{{if and $.Function.ReturnTypes (not $case.ExpectError)}}// Verify result
+		{{range $output := $case.ExpectedOutput}}expected := {{$output.Value}}
+		if result != expected {
+			t.Errorf("Expected %v, got %v", expected, result)
+		}{{end}}{{end}}{{end}}
+	})
+	{{end}}
+}

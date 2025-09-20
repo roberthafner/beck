@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/beck/go-coverage-analyzer/internal/analyzer"
 	"github.com/beck/go-coverage-analyzer/internal/config"
 	"github.com/beck/go-coverage-analyzer/internal/generator"
 	"github.com/beck/go-coverage-analyzer/internal/reporter"
+	"github.com/beck/go-coverage-analyzer/pkg/models"
 	"github.com/spf13/cobra"
 )
 
@@ -110,6 +113,16 @@ appropriate mocks, table-driven test patterns, and edge case coverage.`,
 	RunE: runGeneration,
 }
 
+var validateCmd = &cobra.Command{
+	Use:   "validate [project-path]",
+	Short: "Validate existing or generated tests",
+	Long: `Validate test files for syntax, compilation, and quality issues.
+This command checks test files for common problems, ensures they compile
+and run correctly, and provides recommendations for improvement.`,
+	Args: cobra.MaximumNArgs(1),
+	RunE: runValidation,
+}
+
 var reportCmd = &cobra.Command{
 	Use:   "report [project-path]",
 	Short: "Generate coverage reports without analysis",
@@ -146,6 +159,12 @@ func init() {
 	generateCmd.Flags().StringSliceP("ignore-functions", "", []string{}, "Function patterns to ignore")
 	generateCmd.Flags().IntP("max-cases", "", 10, "Maximum test cases per function")
 
+	// Validate command flags
+	validateCmd.Flags().StringP("test-file", "", "", "Specific test file to validate")
+	validateCmd.Flags().BoolP("compile-check", "", true, "Check if tests compile")
+	validateCmd.Flags().BoolP("run-tests", "", true, "Run tests to check execution")
+	validateCmd.Flags().BoolP("quality-check", "", true, "Run quality checks on test structure")
+
 	// Report command flags
 	reportCmd.Flags().StringP("input", "", "coverage.out", "Input coverage profile file")
 	reportCmd.Flags().StringP("output-file", "", "", "Output file path (default: stdout)")
@@ -154,6 +173,7 @@ func init() {
 	// Add subcommands
 	rootCmd.AddCommand(analyzeCmd)
 	rootCmd.AddCommand(generateCmd)
+	rootCmd.AddCommand(validateCmd)
 	rootCmd.AddCommand(reportCmd)
 }
 
@@ -293,6 +313,105 @@ func runGeneration(cmd *cobra.Command, args []string) error {
 			fmt.Printf("\n✅ Test generation completed successfully\n")
 		} else {
 			fmt.Printf("\n👀 Dry-run completed - no files were written\n")
+		}
+	}
+
+	return nil
+}
+
+func runValidation(cmd *cobra.Command, args []string) error {
+	projectPath := "."
+	if len(args) > 0 {
+		projectPath = args[0]
+	}
+
+	// Get command-line flags
+	verbose, _ := cmd.Flags().GetBool("verbose")
+	testFile, _ := cmd.Flags().GetString("test-file")
+	_, _ = cmd.Flags().GetBool("compile-check")
+	_, _ = cmd.Flags().GetBool("run-tests")
+	_, _ = cmd.Flags().GetBool("quality-check")
+
+	if verbose {
+		fmt.Printf("🔍 Validating tests in project: %s\n", projectPath)
+		if testFile != "" {
+			fmt.Printf("🔍 Focusing on test file: %s\n", testFile)
+		}
+	}
+
+	// Create validator
+	validator := generator.NewTestValidator(projectPath, verbose)
+
+	if testFile != "" {
+		// Validate specific test file
+		result, err := validator.ValidateIndividualTest(testFile)
+		if err != nil {
+			return fmt.Errorf("validation failed: %w", err)
+		}
+
+		if verbose {
+			fmt.Println(validator.GetValidationSummary(result))
+		}
+
+		if !result.Valid {
+			return fmt.Errorf("test validation failed")
+		}
+
+		if verbose {
+			fmt.Println("✅ Test validation passed")
+		}
+	} else {
+		// Create a dummy generation result to validate all test files
+		result := &models.GenerationResult{
+			GeneratedFiles: make([]*models.GeneratedFile, 0),
+		}
+
+		// Find all test files in the project
+		err := filepath.Walk(projectPath, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if strings.HasSuffix(info.Name(), "_test.go") {
+				relativePath, err := filepath.Rel(projectPath, path)
+				if err != nil {
+					relativePath = path
+				}
+
+				result.GeneratedFiles = append(result.GeneratedFiles, &models.GeneratedFile{
+					Path: relativePath,
+				})
+			}
+			return nil
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to find test files: %w", err)
+		}
+
+		if len(result.GeneratedFiles) == 0 {
+			if verbose {
+				fmt.Println("⚠️ No test files found in project")
+			}
+			return nil
+		}
+
+		// Run validation
+		validationResult, err := validator.ValidateTests(result)
+		if err != nil {
+			return fmt.Errorf("validation failed: %w", err)
+		}
+
+		if verbose {
+			fmt.Println(validator.GetValidationSummary(validationResult))
+		}
+
+		if !validationResult.Valid {
+			return fmt.Errorf("test validation failed")
+		}
+
+		if verbose {
+			fmt.Printf("✅ All %d test files validated successfully\n", len(result.GeneratedFiles))
 		}
 	}
 

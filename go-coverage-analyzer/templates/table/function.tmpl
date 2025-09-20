@@ -1,0 +1,55 @@
+{{.Comment}}func {{.TestName}}(t *testing.T) {
+	{{if .HasMocks}}// Setup mocks
+	{{range .MockStructs}}{{.Name}} := &Mock{{.InterfaceName}}{}
+	{{end}}{{end}}
+
+	tests := []struct {
+		name string
+		{{range .Function.Parameters}}{{.Name}} {{.Type}}
+		{{end}}{{if .Function.ReturnTypes}}want {{index .Function.ReturnTypes 0}}{{end}}
+		{{if .Function.HasErrorReturn}}wantErr bool{{end}}
+		{{if .HasMocks}}setupMocks func(){{end}}
+	}{
+		{{range .TestCases}}{
+			name: "{{.Name}}",
+			{{range .Inputs}}{{.Name}}: {{.Value}},
+			{{end}}{{range .ExpectedOutput}}want: {{.Value}},
+			{{end}}{{if .ExpectError}}wantErr: true,{{else}}wantErr: false,{{end}}
+			{{if $.HasMocks}}setupMocks: func() {
+				{{range $.MockStructs}}// Setup {{.Name}} expectations
+				{{.Name}}.On("MethodName").Return(expectedValue)
+				{{end}}
+			},{{end}}
+		},
+		{{end}}
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			{{if .HasMocks}}// Setup mocks for this test case
+			if tt.setupMocks != nil {
+				tt.setupMocks()
+			}
+			{{range .MockStructs}}defer {{.Name}}.AssertExpectations(t)
+			{{end}}{{end}}
+
+			// Execute the function under test
+			{{if .Function.IsMethod}}receiver := &{{.Function.ReceiverType}}{}
+			{{if .Function.ReturnTypes}}got{{if .Function.HasErrorReturn}}, err{{end}} := receiver.{{.Function.Name}}({{range $i, $param := .Function.Parameters}}{{if $i}}, {{end}}tt.{{$param.Name}}{{end}}){{else}}receiver.{{.Function.Name}}({{range $i, $param := .Function.Parameters}}{{if $i}}, {{end}}tt.{{$param.Name}}{{end}}){{end}}{{else}}{{if .Function.ReturnTypes}}got{{if .Function.HasErrorReturn}}, err{{end}} := {{.Function.Name}}({{range $i, $param := .Function.Parameters}}{{if $i}}, {{end}}tt.{{$param.Name}}{{end}}){{else}}{{.Function.Name}}({{range $i, $param := .Function.Parameters}}{{if $i}}, {{end}}tt.{{$param.Name}}{{end}}){{end}}{{end}}
+
+			// Check error expectations
+			{{if .Function.HasErrorReturn}}if (err != nil) != tt.wantErr {
+				t.Errorf("{{.Function.Name}}() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr {
+				return // Don't check return value if we expected an error
+			}{{end}}
+
+			// Check return value
+			{{if .Function.ReturnTypes}}if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("{{.Function.Name}}() = %v, want %v", got, tt.want)
+			}{{end}}
+		})
+	}
+}
