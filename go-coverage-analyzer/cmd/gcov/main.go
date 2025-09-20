@@ -5,11 +5,11 @@ import (
 	"log"
 	"os"
 
-	"github.com/spf13/cobra"
 	"github.com/beck/go-coverage-analyzer/internal/analyzer"
 	"github.com/beck/go-coverage-analyzer/internal/config"
 	"github.com/beck/go-coverage-analyzer/internal/generator"
 	"github.com/beck/go-coverage-analyzer/internal/reporter"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -21,13 +21,47 @@ func main() {
 	var err error
 	cfg, err = config.Load()
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		// Use default configuration if loading fails
+		cfg = &config.Config{}
+		if err := setDefaultConfig(cfg); err != nil {
+			log.Fatalf("Failed to initialize default configuration: %v", err)
+		}
+		// Only show warning in verbose mode
+		if os.Getenv("GCOV_VERBOSE") == "true" {
+			fmt.Fprintf(os.Stderr, "Warning: Using default configuration (config load failed: %v)\n", err)
+		}
 	}
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// setDefaultConfig initializes a configuration with default values
+func setDefaultConfig(cfg *config.Config) error {
+	cfg.ExcludeDirs = []string{"vendor", "testdata", ".git", "node_modules"}
+	cfg.IncludeTests = false
+	cfg.CoverageThreshold = 80.0
+	cfg.CalculateComplexity = true
+	cfg.MinComplexity = 1
+	cfg.OutputFormat = "console"
+	cfg.OutputDir = "."
+	cfg.Verbose = false
+	cfg.ProfileOutput = "coverage.out"
+	cfg.TemplateStyle = "standard"
+	cfg.GenerateMocks = true
+	cfg.TableDriven = true
+	cfg.GenerateBenchmarks = false
+	cfg.OverwriteTests = false
+	cfg.MaxTestCases = 10
+	cfg.MaxConcurrency = 4
+	cfg.EnableCaching = true
+	cfg.IgnoreFunctions = []string{}
+	cfg.CustomPatterns = []string{}
+	cfg.GoVersions = []string{}
+	cfg.BuildTags = []string{}
+	return nil
 }
 
 var rootCmd = &cobra.Command{
@@ -93,7 +127,7 @@ func init() {
 	rootCmd.PersistentFlags().StringP("output", "o", "console", "Output format (console, json, html, xml)")
 	rootCmd.PersistentFlags().StringSliceP("exclude", "e", []string{"vendor", "testdata", ".git"}, "Directories to exclude")
 	rootCmd.PersistentFlags().Float64P("threshold", "t", 80.0, "Coverage threshold percentage")
-	
+
 	// Analyze command flags
 	analyzeCmd.Flags().BoolP("include-tests", "i", false, "Include test files in analysis")
 	analyzeCmd.Flags().StringP("package", "p", "", "Specific package pattern to analyze")
@@ -101,7 +135,7 @@ func init() {
 	analyzeCmd.Flags().StringP("profile-output", "", "coverage.out", "Coverage profile output file")
 	analyzeCmd.Flags().BoolP("complexity", "", true, "Calculate cyclomatic complexity")
 	analyzeCmd.Flags().IntP("min-complexity", "", 1, "Minimum complexity threshold for reporting")
-	
+
 	// Generate command flags
 	generateCmd.Flags().BoolP("dry-run", "d", false, "Preview generated tests without writing files")
 	generateCmd.Flags().StringP("template-style", "", "standard", "Test template style (standard, testify, table)")
@@ -111,12 +145,12 @@ func init() {
 	generateCmd.Flags().BoolP("overwrite", "w", false, "Overwrite existing test files")
 	generateCmd.Flags().StringSliceP("ignore-functions", "", []string{}, "Function patterns to ignore")
 	generateCmd.Flags().IntP("max-cases", "", 10, "Maximum test cases per function")
-	
+
 	// Report command flags
 	reportCmd.Flags().StringP("input", "", "coverage.out", "Input coverage profile file")
 	reportCmd.Flags().StringP("output-file", "", "", "Output file path (default: stdout)")
 	reportCmd.Flags().BoolP("open", "", false, "Open HTML report in browser")
-	
+
 	// Add subcommands
 	rootCmd.AddCommand(analyzeCmd)
 	rootCmd.AddCommand(generateCmd)
@@ -128,7 +162,7 @@ func runAnalysis(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		projectPath = args[0]
 	}
-	
+
 	// Get command-line flags
 	verbose, _ := cmd.Flags().GetBool("verbose")
 	outputFormat, _ := cmd.Flags().GetString("output")
@@ -140,7 +174,7 @@ func runAnalysis(cmd *cobra.Command, args []string) error {
 	profileOutput, _ := cmd.Flags().GetString("profile-output")
 	calculateComplexity, _ := cmd.Flags().GetBool("complexity")
 	minComplexity, _ := cmd.Flags().GetInt("min-complexity")
-	
+
 	// Configure analysis options
 	opts := &analyzer.Options{
 		ProjectPath:         projectPath,
@@ -153,28 +187,28 @@ func runAnalysis(cmd *cobra.Command, args []string) error {
 		MinComplexity:       minComplexity,
 		Verbose:             verbose,
 	}
-	
+
 	if verbose {
 		fmt.Printf("🔍 Analyzing Go project at: %s\n", projectPath)
 	}
-	
+
 	// Run coverage analysis
 	result, err := analyzer.Analyze(opts)
 	if err != nil {
 		return fmt.Errorf("analysis failed: %w", err)
 	}
-	
+
 	// Generate report
 	reportOpts := &reporter.Options{
 		Format:    outputFormat,
 		Threshold: threshold,
 		Verbose:   verbose,
 	}
-	
+
 	if err := reporter.Generate(result, reportOpts); err != nil {
 		return fmt.Errorf("report generation failed: %w", err)
 	}
-	
+
 	// Exit with error code if coverage is below threshold
 	if result.OverallCoverage < threshold {
 		if verbose {
@@ -182,11 +216,11 @@ func runAnalysis(cmd *cobra.Command, args []string) error {
 		}
 		os.Exit(1)
 	}
-	
+
 	if verbose {
 		fmt.Printf("\n✅ Coverage %.1f%% meets threshold %.1f%%\n", result.OverallCoverage, threshold)
 	}
-	
+
 	return nil
 }
 
@@ -195,7 +229,7 @@ func runGeneration(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		projectPath = args[0]
 	}
-	
+
 	// Get command-line flags
 	verbose, _ := cmd.Flags().GetBool("verbose")
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
@@ -207,14 +241,14 @@ func runGeneration(cmd *cobra.Command, args []string) error {
 	ignoreFunctions, _ := cmd.Flags().GetStringSlice("ignore-functions")
 	maxCases, _ := cmd.Flags().GetInt("max-cases")
 	excludeDirs, _ := cmd.Flags().GetStringSlice("exclude")
-	
+
 	if verbose {
 		fmt.Printf("🛠️  Generating tests for project: %s\n", projectPath)
 		if dryRun {
 			fmt.Println("👀 Running in dry-run mode (no files will be written)")
 		}
 	}
-	
+
 	// First run analysis to identify uncovered code
 	analyzeOpts := &analyzer.Options{
 		ProjectPath:         projectPath,
@@ -223,45 +257,45 @@ func runGeneration(cmd *cobra.Command, args []string) error {
 		CalculateComplexity: true,
 		Verbose:             verbose,
 	}
-	
+
 	result, err := analyzer.Analyze(analyzeOpts)
 	if err != nil {
 		return fmt.Errorf("analysis for generation failed: %w", err)
 	}
-	
+
 	// Configure generation options
 	genOpts := &generator.Options{
-		ProjectPath:       projectPath,
-		DryRun:           dryRun,
-		TemplateStyle:    templateStyle,
-		GenerateMocks:    generateMocks,
-		TableDriven:      tableDriven,
+		ProjectPath:        projectPath,
+		DryRun:             dryRun,
+		TemplateStyle:      templateStyle,
+		GenerateMocks:      generateMocks,
+		TableDriven:        tableDriven,
 		GenerateBenchmarks: benchmarks,
-		Overwrite:        overwrite,
-		IgnoreFunctions:  ignoreFunctions,
-		MaxTestCases:     maxCases,
-		Verbose:          verbose,
+		Overwrite:          overwrite,
+		IgnoreFunctions:    ignoreFunctions,
+		MaxTestCases:       maxCases,
+		Verbose:            verbose,
 	}
-	
+
 	// Generate tests
 	genResult, err := generator.Generate(result, genOpts)
 	if err != nil {
 		return fmt.Errorf("test generation failed: %w", err)
 	}
-	
+
 	if verbose {
 		fmt.Printf("\n📊 Generation Summary:\n")
 		fmt.Printf("   Tests Generated: %d\n", genResult.TestsGenerated)
 		fmt.Printf("   Files Created:   %d\n", genResult.FilesCreated)
 		fmt.Printf("   Functions Covered: %d\n", genResult.FunctionsCovered)
-		
+
 		if !dryRun {
 			fmt.Printf("\n✅ Test generation completed successfully\n")
 		} else {
 			fmt.Printf("\n👀 Dry-run completed - no files were written\n")
 		}
 	}
-	
+
 	return nil
 }
 
@@ -270,7 +304,7 @@ func runReporting(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		projectPath = args[0]
 	}
-	
+
 	// Get command-line flags
 	verbose, _ := cmd.Flags().GetBool("verbose")
 	outputFormat, _ := cmd.Flags().GetString("output")
@@ -278,11 +312,11 @@ func runReporting(cmd *cobra.Command, args []string) error {
 	outputFile, _ := cmd.Flags().GetString("output-file")
 	openReport, _ := cmd.Flags().GetBool("open")
 	threshold, _ := cmd.Flags().GetFloat64("threshold")
-	
+
 	if verbose {
 		fmt.Printf("📋 Generating report from: %s\n", inputFile)
 	}
-	
+
 	// Configure reporting options
 	reportOpts := &reporter.Options{
 		Format:     outputFormat,
@@ -292,15 +326,15 @@ func runReporting(cmd *cobra.Command, args []string) error {
 		Threshold:  threshold,
 		Verbose:    verbose,
 	}
-	
+
 	// Generate report from existing coverage data
 	if err := reporter.GenerateFromProfile(projectPath, reportOpts); err != nil {
 		return fmt.Errorf("report generation failed: %w", err)
 	}
-	
+
 	if verbose {
 		fmt.Printf("✅ Report generated successfully\n")
 	}
-	
+
 	return nil
 }
