@@ -220,9 +220,10 @@ func runAnalysis(cmd *cobra.Command, args []string) error {
 
 	// Generate report
 	reportOpts := &reporter.Options{
-		Format:    outputFormat,
-		Threshold: threshold,
-		Verbose:   verbose,
+		Format:      outputFormat,
+		Threshold:   threshold,
+		Verbose:     verbose,
+		ShowDetails: verbose,
 	}
 
 	if err := reporter.Generate(result, reportOpts); err != nil {
@@ -438,12 +439,13 @@ func runReporting(cmd *cobra.Command, args []string) error {
 
 	// Configure reporting options
 	reportOpts := &reporter.Options{
-		Format:     outputFormat,
-		InputFile:  inputFile,
-		OutputFile: outputFile,
-		OpenReport: openReport,
-		Threshold:  threshold,
-		Verbose:    verbose,
+		Format:      outputFormat,
+		InputFile:   inputFile,
+		OutputFile:  outputFile,
+		OpenReport:  openReport,
+		Threshold:   threshold,
+		Verbose:     verbose,
+		ShowDetails: verbose,
 	}
 
 	// Generate report from existing coverage data

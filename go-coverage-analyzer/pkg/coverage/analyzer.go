@@ -65,6 +65,15 @@ func (e *AnalysisEngine) AnalyzeProject(opts *AnalysisOptions) (*models.Analysis
 		if !filepath.IsAbs(profilePath) {
 			profilePath = filepath.Join(opts.ProjectPath, profilePath)
 		}
+	} else {
+		// Step 2.5: Check for existing coverage profiles automatically
+		defaultProfilePath := filepath.Join(opts.ProjectPath, "coverage.out")
+		if _, err := os.Stat(defaultProfilePath); err == nil {
+			profilePath = defaultProfilePath
+			if e.verbose {
+				fmt.Printf("📋 Found existing coverage profile: %s\n", profilePath)
+			}
+		}
 	}
 
 	// Step 3: Parse coverage profile
