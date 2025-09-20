@@ -69,7 +69,9 @@ go-coverage-analyzer/
 │   ├── reporter/         # Multi-format reporting (working)
 │   └── config/           # Configuration system (complete)
 ├── pkg/models/           # Comprehensive data models (350+ LOC)
-└── examples/             # Sample projects for testing
+├── ../sample-projects/   # Sample projects for testing and demonstration
+│   ├── simple-calculator/ # Basic Go project with minimal dependencies  
+│   └── user-service/     # Complex project with interfaces and mocks
 ```
 
 ### **Comprehensive Data Models**
@@ -151,7 +153,7 @@ The application is architected for easy completion of:
 ### **Current Usage**
 ```bash
 # Analyze a Go project (displays stub results)
-./bin/gcov analyze ./examples/simple-project --verbose
+./bin/gcov analyze sample-projects/simple-calculator --verbose
 
 # Generate JSON report for CI/CD integration
 ./bin/gcov analyze ./project --output json --threshold 85

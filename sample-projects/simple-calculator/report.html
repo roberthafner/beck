@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go Coverage Report - .</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 40px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; }
+        .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .metric { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; border-left: 4px solid #007bff; }
+        .metric-value { font-size: 2em; font-weight: bold; color: #333; }
+        .metric-label { color: #666; margin-top: 5px; }
+        .coverage-good { color: #28a745; }
+        .coverage-warning { color: #ffc107; }
+        .coverage-danger { color: #dc3545; }
+        .packages-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .packages-table th, .packages-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        .packages-table th { background-color: #f8f9fa; font-weight: 600; }
+        .packages-table tr:hover { background-color: #f5f5f5; }
+        .progress-bar { width: 100%; height: 20px; background-color: #e9ecef; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.3s ease; }
+        .uncovered-list { list-style: none; padding: 0; }
+        .uncovered-list li { padding: 10px; margin: 5px 0; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; }
+        .section { margin: 30px 0; }
+        .section-title { font-size: 1.5em; font-weight: 600; margin-bottom: 15px; color: #333; }
+        .complexity-high { color: #dc3545; font-weight: bold; }
+        .complexity-medium { color: #ffc107; font-weight: bold; }
+        .complexity-low { color: #28a745; }
+        .footer { margin-top: 40px; text-align: center; color: #666; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Go Coverage Report</h1>
+            <p>.</p>
+            <p>Generated: 2025-09-20 19:46:30</p>
+            <p>Module: github.com/beck/simple-calculator</p>
+        </div>
+
+        <div class="summary">
+            <div class="metric">
+                <div class="metric-value coverage-danger">27.4%</div>
+                <div class="metric-label">Overall Coverage</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value coverage-danger">53.3%</div>
+                <div class="metric-label">Function Coverage</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">15</div>
+                <div class="metric-label">Total Functions</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value coverage-danger">7</div>
+                <div class="metric-label">Untested Functions</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Package Coverage</h2>
+            <table class="packages-table">
+                <thead>
+                    <tr>
+                        <th>Package</th>
+                        <th>Coverage</th>
+                        <th>Functions</th>
+                        <th>Lines</th>
+                        <th>Complexity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td>main</td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-fill coverage-danger" style="width: 27.419354838709676%; background-color: #dc3545;"></div>
+                            </div>
+                            <span class="coverage-danger">27.4%</span>
+                        </td>
+                        <td>8/16</td>
+                        <td>34/124</td>
+                        <td>33</td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+
+        
+        <div class="section">
+            <h2 class="section-title">Top Uncovered Functions</h2>
+            <ul class="uncovered-list">
+                
+                <li>
+                    <strong>IsPrime</strong> in main
+                    <br><small>calculator.go:97 | Complexity: <span class="complexity-medium">6</span></small>
+                </li>
+                
+                <li>
+                    <strong>Fibonacci</strong> in main
+                    <br><small>calculator.go:81 | Complexity: <span class="complexity-low">4</span></small>
+                </li>
+                
+                <li>
+                    <strong>Sqrt</strong> in main
+                    <br><small>calculator.go:47 | Complexity: <span class="complexity-low">2</span></small>
+                </li>
+                
+                <li>
+                    <strong>Max</strong> in main
+                    <br><small>calculator.go:117 | Complexity: <span class="complexity-low">2</span></small>
+                </li>
+                
+                <li>
+                    <strong>Min</strong> in main
+                    <br><small>calculator.go:125 | Complexity: <span class="complexity-low">2</span></small>
+                </li>
+                
+                <li>
+                    <strong>Abs</strong> in main
+                    <br><small>calculator.go:133 | Complexity: <span class="complexity-low">2</span></small>
+                </li>
+                
+                <li>
+                    <strong>Power</strong> in main
+                    <br><small>calculator.go:42 | Complexity: <span class="complexity-low">1</span></small>
+                </li>
+                
+            </ul>
+        </div>
+        
+
+        <div class="footer">
+            <p>Report generated by gcov v0.1.0 in 481.5µs</p>
+        </div>
+    </div>
+</body>
+</html>

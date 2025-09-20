@@ -67,10 +67,10 @@ go-coverage-analyzer/
 │   ├── benchmark_test.tmpl      # Benchmark test template
 │   ├── integration_test.tmpl    # Integration test template
 │   └── mock.tmpl                # Mock generation template
-├── examples/
-│   ├── simple-project/          # Simple Go project for testing
-│   ├── complex-project/         # Complex project with dependencies
-│   └── microservice/            # Microservice example
+├── ../sample-projects/          # Sample projects for testing and demonstration
+│   ├── simple-calculator/       # Basic Go project with minimal dependencies
+│   ├── user-service/           # Complex project with interfaces and mocks
+│   └── README.md               # Sample projects documentation
 ├── docs/
 │   ├── README.md                # Main documentation
 │   ├── USAGE.md                 # Usage examples and guides
@@ -344,9 +344,9 @@ go-coverage-analyzer/
    - Add troubleshooting guides and FAQ
    - Build video tutorials and demonstrations
 
-2. **Example Projects**
-   - Create comprehensive example projects
-   - Add real-world use case demonstrations
+2. **Sample Projects Enhancement**
+   - Expand sample-projects with additional use cases
+   - Add real-world demonstration scenarios
    - Build tutorial projects with step-by-step guides
    - Create benchmark projects for performance testing
 

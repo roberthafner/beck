@@ -67,20 +67,24 @@ uninstall:
 	@rm -f /usr/local/bin/$(BINARY_NAME)
 	@echo "✅ $(BINARY_NAME) uninstalled"
 
-# Examples and testing
-run-example: build
-	@echo "🚀 Running example analysis..."
-	@./$(BUILD_DIR)/$(BINARY_NAME) analyze ./examples/simple-project --verbose
+# Sample projects testing
+run-simple-calculator: build
+	@echo "🚀 Running simple calculator analysis..."
+	@./$(BUILD_DIR)/$(BINARY_NAME) analyze ../sample-projects/simple-calculator --verbose --threshold 20
 
-run-generate-example: build
-	@echo "🛠️  Running example test generation..."
-	@./$(BUILD_DIR)/$(BINARY_NAME) generate ./examples/simple-project --dry-run --verbose
+run-user-service: build
+	@echo "🚀 Running user service analysis..."
+	@./$(BUILD_DIR)/$(BINARY_NAME) analyze ../sample-projects/user-service --verbose --threshold 30
+
+run-generate-calculator: build
+	@echo "🛠️  Running calculator test generation..."
+	@./$(BUILD_DIR)/$(BINARY_NAME) generate ../sample-projects/simple-calculator --dry-run --verbose --threshold 20
 
 demo: build
 	@echo "🎬 Running full demo..."
-	@./$(BUILD_DIR)/$(BINARY_NAME) analyze ./examples/simple-project --verbose --output console
+	@./$(BUILD_DIR)/$(BINARY_NAME) analyze ../sample-projects/simple-calculator --verbose --output console --threshold 20
 	@echo ""
-	@./$(BUILD_DIR)/$(BINARY_NAME) generate ./examples/simple-project --dry-run --verbose
+	@./$(BUILD_DIR)/$(BINARY_NAME) generate ../sample-projects/simple-calculator --dry-run --verbose --threshold 20
 
 # Development workflow
 dev: fmt vet test
@@ -120,11 +124,11 @@ clean:
 	@rm -f *.test
 	@echo "✅ Cleanup complete"
 
-clean-examples:
-	@echo "🧹 Cleaning example projects..."
-	@find examples -name "*.test" -delete
-	@find examples -name "coverage.out" -delete
-	@find examples -name "*_test.go" -path "*/generated/*" -delete
+clean-sample-projects:
+	@echo "🧹 Cleaning sample projects..."
+	@find ../sample-projects -name "*.test" -delete 2>/dev/null || true
+	@find ../sample-projects -name "new-coverage.out" -delete 2>/dev/null || true
+	@find ../sample-projects -name "*_test.go" -path "*/generated/*" -delete 2>/dev/null || true
 
 # Docker support
 docker-build:
@@ -186,10 +190,11 @@ help:
 	@echo "  dev             Run fmt, vet, and test"
 	@echo "  ci              Full CI workflow"
 	@echo ""
-	@echo "Example Commands:"
-	@echo "  run-example     Analyze example project"
-	@echo "  run-generate-example  Generate tests for example (dry-run)"
-	@echo "  demo            Run full demo"
+	@echo "Sample Project Commands:"
+	@echo "  run-simple-calculator   Analyze simple calculator project"
+	@echo "  run-user-service        Analyze user service project"
+	@echo "  run-generate-calculator Generate tests for calculator (dry-run)"
+	@echo "  demo                    Run full demo"
 	@echo ""
 	@echo "Utility Commands:"
 	@echo "  clean           Clean build artifacts"
